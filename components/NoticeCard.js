@@ -16,6 +16,21 @@ function formatDate(value) {
   });
 }
 
+// Friendly relative label, e.g. "Today", "in 3 days", "2 days ago".
+function relativeLabel(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((startOfDay(date) - startOfDay(new Date())) / 86400000);
+
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  if (days === -1) return "Yesterday";
+  if (days > 1) return `in ${days} days`;
+  return `${Math.abs(days)} days ago`;
+}
+
 export default function NoticeCard({ notice, onDelete }) {
   const isUrgent = notice.priority === "Urgent";
 
@@ -50,32 +65,38 @@ export default function NoticeCard({ notice, onDelete }) {
               Urgent
             </span>
           )}
-          <span className="ml-auto text-xs text-gray-500">
-            {formatDate(notice.publishDate)}
+          <span
+            className="ml-auto text-xs text-gray-500"
+            title={formatDate(notice.publishDate)}
+          >
+            {relativeLabel(notice.publishDate)}
           </span>
         </div>
 
         <h2 className="mb-1 text-lg font-semibold text-gray-900">
           {notice.title}
         </h2>
-        <p className="mb-4 flex-1 whitespace-pre-line text-sm text-gray-600">
+        <p className="mb-4 line-clamp-3 flex-1 whitespace-pre-line text-sm text-gray-600">
           {notice.body}
         </p>
 
-        <div className="mt-auto flex gap-2">
-          <Link
-            href={`/notices/${notice.id}/edit`}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Edit
-          </Link>
-          <button
-            type="button"
-            onClick={() => onDelete(notice)}
-            className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-          >
-            Delete
-          </button>
+        <div className="mt-auto flex items-center justify-between">
+          <span className="text-xs text-gray-400">{formatDate(notice.publishDate)}</span>
+          <div className="flex gap-2">
+            <Link
+              href={`/notices/${notice.id}/edit`}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Edit
+            </Link>
+            <button
+              type="button"
+              onClick={() => onDelete(notice)}
+              className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </article>

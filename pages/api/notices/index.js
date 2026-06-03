@@ -1,18 +1,17 @@
 import { prisma } from "../../../lib/prisma";
 import { validateNotice } from "../../../lib/validation";
+import { buildNoticeQuery } from "../../../lib/notices";
 
 // Collection endpoint:
-//   GET  /api/notices  -> list all notices (Urgent first, ordered in the DB)
+//   GET  /api/notices  -> list notices (filtered + Urgent-first, all in the DB)
+//                         optional query params: ?q=&category=&priority=
 //   POST /api/notices  -> create a notice (with server-side validation)
 export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
-      const notices = await prisma.notice.findMany({
-        // Urgent-first ordering is done in the database query, not in JS.
-        // `priority` desc puts Urgent above Normal; newest publishDate first
-        // is the chosen order within each priority group.
-        orderBy: [{ priority: "desc" }, { publishDate: "desc" }],
-      });
+      // Filtering and Urgent-first ordering are both done in the DB query,
+      // not in JS, via the shared query builder.
+      const notices = await prisma.notice.findMany(buildNoticeQuery(req.query));
       return res.status(200).json(notices);
     }
 

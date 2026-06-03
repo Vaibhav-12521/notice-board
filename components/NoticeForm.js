@@ -32,6 +32,7 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [imageBroken, setImageBroken] = useState(false);
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -55,7 +56,7 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
       });
 
       if (res.ok) {
-        router.push("/");
+        router.push(`/?flash=${isEdit ? "updated" : "created"}`);
         return;
       }
 
@@ -175,11 +176,28 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
           id="imageUrl"
           type="url"
           value={form.imageUrl}
-          onChange={(e) => update("imageUrl", e.target.value)}
+          onChange={(e) => {
+            update("imageUrl", e.target.value);
+            setImageBroken(false);
+          }}
           className={inputClass}
           placeholder="https://example.com/image.jpg"
         />
         {errors.imageUrl && <p className="mt-1 text-xs text-red-600">{errors.imageUrl}</p>}
+
+        {/* Live preview when a valid-looking image URL is entered */}
+        {/^https?:\/\//i.test(form.imageUrl) && !imageBroken && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={form.imageUrl}
+            alt="Preview"
+            onError={() => setImageBroken(true)}
+            className="mt-2 h-36 w-full rounded-md border border-gray-200 object-cover"
+          />
+        )}
+        {imageBroken && (
+          <p className="mt-1 text-xs text-gray-400">Could not load a preview for this URL.</p>
+        )}
       </div>
 
       <div className="flex items-center gap-3 pt-2">
