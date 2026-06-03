@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const CATEGORY_STYLES = {
@@ -6,23 +7,30 @@ const CATEGORY_STYLES = {
   General: "bg-gray-100 text-gray-700",
 };
 
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Deterministic, UTC-based date format so the server and the browser always
+// produce the same string (no locale/timezone differences -> no hydration
+// mismatch). publishDate is stored at UTC midnight, so UTC parts are correct.
 function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
 
 // Friendly relative label, e.g. "Today", "in 3 days", "2 days ago".
+// Depends on "now", so it is only rendered on the client (after mount).
 function relativeLabel(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
 
-  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const days = Math.round((startOfDay(date) - startOfDay(new Date())) / 86400000);
+  const utcDay = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const days = Math.round((utcDay - today) / 86400000);
 
   if (days === 0) return "Today";
   if (days === 1) return "Tomorrow";
@@ -33,6 +41,11 @@ function relativeLabel(value) {
 
 export default function NoticeCard({ notice, onDelete }) {
   const isUrgent = notice.priority === "Urgent";
+
+  // Render the absolute date on the server / first paint, then upgrade to the
+  // relative label once mounted on the client. This avoids a hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <article
@@ -69,7 +82,7 @@ export default function NoticeCard({ notice, onDelete }) {
             className="ml-auto text-xs text-gray-500"
             title={formatDate(notice.publishDate)}
           >
-            {relativeLabel(notice.publishDate)}
+            {mounted ? relativeLabel(notice.publishDate) : formatDate(notice.publishDate)}
           </span>
         </div>
 

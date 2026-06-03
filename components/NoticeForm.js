@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { CATEGORIES, PRIORITIES } from "../lib/validation";
@@ -26,7 +26,9 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
     body: initialNotice?.body ?? "",
     category: initialNotice?.category ?? "General",
     priority: initialNotice?.priority ?? "Normal",
-    publishDate: toDateInputValue(initialNotice?.publishDate) || toDateInputValue(new Date()),
+    // Left empty on the server; defaulted to "today" after mount (below) so the
+    // statically-rendered create page doesn't cause a hydration mismatch.
+    publishDate: toDateInputValue(initialNotice?.publishDate),
     imageUrl: initialNotice?.imageUrl ?? "",
   });
   const [errors, setErrors] = useState({});
@@ -37,6 +39,15 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
+
+  // On a fresh "create" form, default the publish date to today (client-side
+  // only, to keep the statically-rendered page hydration-safe).
+  useEffect(() => {
+    if (mode === "create" && !form.publishDate) {
+      update("publishDate", toDateInputValue(new Date()));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
