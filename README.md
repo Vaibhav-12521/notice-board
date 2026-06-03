@@ -17,7 +17,11 @@ Reno Platforms Web Development Internship assignment.
   group, newer publish dates come first.
 - **Server-side validation** inside the API routes — required fields cannot be
   empty and the date must be valid, even if the browser is bypassed.
-- Optional **image URL** per notice (bonus).
+- Optional **image URL** per notice (bonus), with a live preview in the form.
+- **Search and filter** by text, category and priority — all applied in the
+  database query via URL params, not in the browser.
+- UX touches: loading skeletons while fetching, success toasts on
+  create/update/delete, friendly relative dates, and clear empty states.
 
 ## Tech stack
 
@@ -36,7 +40,7 @@ methods and status codes:
 
 | Method   | Route                | Purpose                          | Status |
 | -------- | -------------------- | -------------------------------- | ------ |
-| `GET`    | `/api/notices`       | List notices (Urgent first)      | 200    |
+| `GET`    | `/api/notices`       | List notices (Urgent first); supports `?q=&category=&priority=` | 200 |
 | `POST`   | `/api/notices`       | Create a notice                  | 201 / 400 |
 | `GET`    | `/api/notices/:id`   | Fetch a single notice            | 200 / 404 |
 | `PUT`    | `/api/notices/:id`   | Update a notice                  | 200 / 400 / 404 |
@@ -92,7 +96,15 @@ DIRECT_URL="postgresql://...pooler.supabase.com:5432/postgres"
 npx prisma db push
 ```
 
-### 5. Start the dev server
+### 5. (Optional) Seed sample notices
+
+```bash
+npx prisma db seed
+```
+
+This inserts six demo notices so the board isn't empty on first run.
+
+### 6. Start the dev server
 
 ```bash
 npm run dev
@@ -114,9 +126,10 @@ Open <http://localhost:3000>.
 ## One thing I would improve with more time
 
 Add **image file uploads** (e.g. Vercel Blob or Supabase Storage) instead of
-only accepting an image URL, plus **pagination / search and category filters**
-on the list page so the board scales past a few dozen notices. I would also add
-automated tests for the API validation logic.
+only accepting an image URL, and **pagination** on the list page so the board
+scales past a few dozen notices (the search and category/priority filters are
+already implemented and run in the database query). I would also add automated
+tests for the API validation logic.
 
 ## Where and how AI was used
 
