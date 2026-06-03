@@ -1,0 +1,40 @@
+// Prisma schema for the Notice Board.
+// Database: Supabase (PostgreSQL). All queries run through the Prisma client.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Category {
+  Exam
+  Event
+  General
+}
+
+// Order matters: Prisma orders enums by their declared position.
+// Normal is declared before Urgent, so `orderBy: { priority: "desc" }`
+// places every Urgent notice above every Normal notice in the DB query.
+enum Priority {
+  Normal
+  Urgent
+}
+
+model Notice {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  category    Category
+  priority    Priority @default(Normal)
+  publishDate DateTime
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([priority, publishDate])
+}
