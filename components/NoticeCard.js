@@ -7,6 +7,14 @@ const CATEGORY_STYLES = {
   General: "bg-gray-100 text-gray-700",
 };
 
+// Gradient used as a placeholder banner for notices without an image, so every
+// card has a consistent header.
+const CATEGORY_GRADIENT = {
+  Exam: "from-purple-500 to-indigo-500",
+  Event: "from-blue-500 to-cyan-500",
+  General: "from-slate-500 to-slate-600",
+};
+
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -53,15 +61,29 @@ export default function NoticeCard({ notice, onDelete }) {
         isUrgent ? "border-red-300 ring-1 ring-red-200" : "border-gray-200"
       }`}
     >
-      {notice.imageUrl && (
+      {notice.imageUrl ? (
         // Plain <img> keeps remote, user-supplied URLs simple and avoids
         // next/image host configuration surprises on the free tier.
+        // Lazy + async decoding keeps the list snappy with many images.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={notice.imageUrl}
           alt={notice.title}
-          className="h-40 w-full object-cover"
+          loading="lazy"
+          decoding="async"
+          className="h-40 w-full bg-gray-100 object-cover"
         />
+      ) : (
+        // Consistent header for notices without an image.
+        <div
+          className={`flex h-40 w-full items-center justify-center bg-gradient-to-br ${
+            CATEGORY_GRADIENT[notice.category] || CATEGORY_GRADIENT.General
+          }`}
+        >
+          <span className="text-xl font-bold uppercase tracking-widest text-white/80">
+            {notice.category}
+          </span>
+        </div>
       )}
 
       <div className="flex flex-1 flex-col p-4">

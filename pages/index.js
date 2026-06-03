@@ -7,29 +7,17 @@ import NoticeCard from "../components/NoticeCard";
 import NoticeFilters from "../components/NoticeFilters";
 import Toast from "../components/Toast";
 
-export default function Home({ notices, filters }) {
+export default function Home({ notices: initialNotices, filters: initialFilters }) {
   const router = useRouter();
+  const [notices, setNotices] = useState(initialNotices);
+  const [filters, setFilters] = useState(initialFilters);
+  const [loading, setLoading] = useState(false);
   const [target, setTarget] = useState(null); // notice pending delete confirmation
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
-  const [navLoading, setNavLoading] = useState(false);
 
   const hasActiveFilter = Boolean(filters.q || filters.category || filters.priority);
-
-  // Loading indicator while navigating (filter changes, delete refresh).
-  useEffect(() => {
-    const start = () => setNavLoading(true);
-    const done = () => setNavLoading(false);
-    router.events.on("routeChangeStart", start);
-    router.events.on("routeChangeComplete", done);
-    router.events.on("routeChangeError", done);
-    return () => {
-      router.events.off("routeChangeStart", start);
-      router.events.off("routeChangeComplete", done);
-      router.events.off("routeChangeError", done);
-    };
-  }, [router]);
 
   // Show a toast after a create/update redirect (?flash=created|updated), then
   // strip the param from the URL so it doesn't re-fire on refresh.
@@ -44,6 +32,40 @@ export default function Home({ notices, filters }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query.flash]);
 
+  // Fetch the (server-filtered) list from the API without a full page reload.
+  async function fetchNotices(nextFilters) {
+    const params = new URLSearchParams();
+    if (nextFilters.q) params.set("q", nextFilters.q);
+    if (nextFilters.category) params.set("category", nextFilters.category);
+    if (nextFilters.priority) params.set("priority", nextFilters.priority);
+    const qs = params.toString();
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/notices${qs ? `?${qs}` : ""}`);
+      if (!res.ok) throw new Error();
+      setNotices(await res.json());
+      // Keep the URL in sync (shareable / back button) without re-running SSR.
+      router.push(`/${qs ? `?${qs}` : ""}`, undefined, { shallow: true });
+    } catch {
+      setToast({ type: "error", message: "Could not load notices." });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleFilterChange(partial) {
+    const next = { ...filters, ...partial };
+    setFilters(next);
+    fetchNotices(next);
+  }
+
+  function clearFilters() {
+    const next = { q: "", category: "", priority: "" };
+    setFilters(next);
+    fetchNotices(next);
+  }
+
   async function confirmDelete() {
     if (!target) return;
     setDeleting(true);
@@ -54,9 +76,10 @@ export default function Home({ notices, filters }) {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload.error || "Failed to delete notice.");
       }
+      // Remove from local state immediately — no full reload needed.
+      setNotices((prev) => prev.filter((n) => n.id !== target.id));
       setTarget(null);
       setToast({ type: "success", message: "Notice deleted." });
-      router.replace(router.asPath); // re-run getServerSideProps
     } catch (err) {
       setError(err.message);
     } finally {
@@ -71,8 +94,11 @@ export default function Home({ notices, filters }) {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Notice Board</h1>
             <p className="text-sm text-gray-500">
-              {notices.length} {notices.length === 1 ? "notice" : "notices"}
-              {hasActiveFilter ? " match your filters" : " · Urgent shown first"}
+              {loading
+                ? "Loading…"
+                : `${notices.length} ${notices.length === 1 ? "notice" : "notices"}${
+                    hasActiveFilter ? " match your filters" : " · Urgent shown first"
+                  }`}
             </p>
           </div>
           <Link
@@ -83,26 +109,16 @@ export default function Home({ notices, filters }) {
           </Link>
         </header>
 
-        <NoticeFilters filters={filters} />
+        <NoticeFilters value={filters} onChange={handleFilterChange} onClear={clearFilters} />
 
-        {navLoading ? (
-          // Lightweight skeleton grid while the server responds.
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-44 animate-pulse rounded-xl border border-gray-200 bg-white"
-              />
-            ))}
-          </div>
-        ) : notices.length === 0 ? (
+        {notices.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
             {hasActiveFilter ? (
               <>
                 <p className="text-gray-600">No notices match your filters.</p>
                 <button
                   type="button"
-                  onClick={() => router.push({ pathname: "/" })}
+                  onClick={clearFilters}
                   className="mt-2 text-sm font-medium text-indigo-600 hover:underline"
                 >
                   Clear filters
@@ -121,7 +137,11 @@ export default function Home({ notices, filters }) {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={`grid grid-cols-1 gap-5 transition-opacity sm:grid-cols-2 lg:grid-cols-3 ${
+              loading ? "pointer-events-none opacity-50" : ""
+            }`}
+          >
             {notices.map((notice) => (
               <NoticeCard key={notice.id} notice={notice} onDelete={setTarget} />
             ))}
@@ -178,8 +198,9 @@ export default function Home({ notices, filters }) {
   );
 }
 
-// Read happens server-side through Prisma. Filtering and Urgent-first ordering
-// are the DB query's responsibility (buildNoticeQuery), not client-side sorting.
+// Initial load is server-rendered through Prisma (fast first paint + deep-link
+// support). Filtering and Urgent-first ordering are the DB query's job
+// (buildNoticeQuery). Later filter changes fetch the same server-filtered API.
 export async function getServerSideProps({ query }) {
   const notices = await prisma.notice.findMany(buildNoticeQuery(query));
 

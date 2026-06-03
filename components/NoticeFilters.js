@@ -1,31 +1,31 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
+import { useEffect, useRef, useState } from "react";
 import { CATEGORIES, PRIORITIES } from "../lib/validation";
 
 /**
- * Search + category/priority filter bar. Pushes the chosen filters into the URL
- * query string, which re-runs getServerSideProps so filtering stays on the
- * server. Initial values come from the `filters` prop (the current URL state).
+ * Search + category/priority filter bar.
+ *
+ * Calls `onChange(partialFilters)` so the parent can fetch from the API
+ * (which still filters in the database) without a full page reload. The text
+ * search is debounced so it filters live as you type.
+ *
+ * @param {{ value: {q:string,category:string,priority:string}, onChange: (p:object)=>void, onClear: ()=>void }} props
  */
-export default function NoticeFilters({ filters }) {
-  const router = useRouter();
-  const [q, setQ] = useState(filters.q || "");
+export default function NoticeFilters({ value, onChange, onClear }) {
+  const [q, setQ] = useState(value.q || "");
+  const firstRun = useRef(true);
 
-  const hasActiveFilter = Boolean(filters.q || filters.category || filters.priority);
+  // Debounce the text search (350ms) so we don't hit the API on every keypress.
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    const timer = setTimeout(() => onChange({ q: q.trim() }), 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
 
-  // Build the next query, dropping empty values so the URL stays clean.
-  function navigate(next) {
-    const merged = {
-      q: next.q ?? filters.q,
-      category: next.category ?? filters.category,
-      priority: next.priority ?? filters.priority,
-    };
-    const query = {};
-    if (merged.q) query.q = merged.q;
-    if (merged.category) query.category = merged.category;
-    if (merged.priority) query.priority = merged.priority;
-    router.push({ pathname: "/", query });
-  }
+  const hasActiveFilter = Boolean(value.q || value.category || value.priority);
 
   const selectClass =
     "rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500";
@@ -35,9 +35,9 @@ export default function NoticeFilters({ filters }) {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          navigate({ q: q.trim() });
+          onChange({ q: q.trim() });
         }}
-        className="flex flex-1 gap-2"
+        className="flex-1"
         role="search"
       >
         <input
@@ -48,18 +48,12 @@ export default function NoticeFilters({ filters }) {
           aria-label="Search notices"
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
-        <button
-          type="submit"
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-        >
-          Search
-        </button>
       </form>
 
       <div className="flex gap-2">
         <select
-          value={filters.category}
-          onChange={(e) => navigate({ category: e.target.value })}
+          value={value.category}
+          onChange={(e) => onChange({ category: e.target.value })}
           aria-label="Filter by category"
           className={selectClass}
         >
@@ -72,8 +66,8 @@ export default function NoticeFilters({ filters }) {
         </select>
 
         <select
-          value={filters.priority}
-          onChange={(e) => navigate({ priority: e.target.value })}
+          value={value.priority}
+          onChange={(e) => onChange({ priority: e.target.value })}
           aria-label="Filter by priority"
           className={selectClass}
         >
@@ -90,7 +84,7 @@ export default function NoticeFilters({ filters }) {
             type="button"
             onClick={() => {
               setQ("");
-              router.push({ pathname: "/" });
+              onClear();
             }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
           >
