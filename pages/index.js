@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { prisma } from "../lib/prisma";
@@ -9,9 +9,8 @@ import Toast from "../components/Toast";
 
 export default function Home({ notices: initialNotices }) {
   const router = useRouter();
-  const [notices, setNotices] = useState(initialNotices);
+  const [allNotices, setAllNotices] = useState(initialNotices);
   const [filters, setFilters] = useState({ q: "", category: "", priority: "" });
-  const [loading, setLoading] = useState(false);
   const [target, setTarget] = useState(null); // notice pending delete confirmation
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -20,49 +19,44 @@ export default function Home({ notices: initialNotices }) {
 
   const hasActiveFilter = Boolean(filters.q || filters.category || filters.priority);
 
-  // Fetching is driven entirely by the URL query. This single effect runs on
-  // first load, on every filter change, AND on browser back/forward (which all
-  // change router.query) — so the list always matches the URL. The page itself
-  // is statically generated (instant first paint); this reconciles to live,
-  // server-filtered data.
+  // Filtering happens instantly in the client over the already server-ordered
+  // list — no network round-trip per keystroke. (Urgent-first ordering is still
+  // done in the DB; this only narrows the ordered list, never re-sorts it.)
+  const notices = useMemo(() => {
+    const q = filters.q.trim().toLowerCase();
+    return allNotices.filter((n) => {
+      if (filters.category && n.category !== filters.category) return false;
+      if (filters.priority && n.priority !== filters.priority) return false;
+      if (q && !`${n.title} ${n.body}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [allNotices, filters]);
+
+  // Keep filters in sync with the URL (deep links + browser back/forward).
   useEffect(() => {
     if (!router.isReady) return;
-    const f = readFilters(router.query);
-    setFilters(f);
+    setFilters(readFilters(router.query));
+  }, [router.isReady, router.query.q, router.query.category, router.query.priority]);
 
-    // First load with no filters: the page already shows the statically
-    // generated snapshot, so reconcile silently (no loading dim) to avoid a
-    // flicker. Filter changes and later loads show the dim normally.
-    const hasFilter = f.q || f.category || f.priority;
-    const silent = !didInit.current && !hasFilter;
-    didInit.current = true;
-
+  // Fetch the full, server-ordered list once on load to reconcile with live
+  // data (beyond the static snapshot). Filtering then runs entirely client-side.
+  useEffect(() => {
+    if (!router.isReady) return;
     let cancelled = false;
     (async () => {
-      const params = new URLSearchParams();
-      if (f.q) params.set("q", f.q);
-      if (f.category) params.set("category", f.category);
-      if (f.priority) params.set("priority", f.priority);
-      const qs = params.toString();
-
-      if (!silent) setLoading(true);
       try {
-        const res = await fetch(`/api/notices${qs ? `?${qs}` : ""}`);
+        const res = await fetch("/api/notices");
         if (!res.ok) throw new Error();
         const data = await res.json();
-        if (!cancelled) setNotices(data);
+        if (!cancelled) setAllNotices(data);
       } catch {
-        if (!cancelled) setToast({ type: "error", message: "Could not load notices." });
-      } finally {
-        if (!cancelled && !silent) setLoading(false);
+        /* keep the statically rendered snapshot if the refresh fails */
       }
     })();
-
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.isReady, router.query.q, router.query.category, router.query.priority]);
+  }, [router.isReady]);
 
   // Show a toast after a create/update redirect (?flash=created|updated), then
   // strip the param from the URL so it doesn't re-fire on refresh.
@@ -77,20 +71,22 @@ export default function Home({ notices: initialNotices }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query.flash]);
 
-  // Filter changes just update the URL (shallow). The effect above reacts to
-  // the URL change and fetches — which also makes back/forward consistent.
+  // Filter changes apply instantly (state) and sync to the URL for shareable
+  // links. `replace` avoids polluting history while typing a search.
   function handleFilterChange(partial) {
     const next = { ...filters, ...partial };
+    setFilters(next);
     const params = new URLSearchParams();
     if (next.q) params.set("q", next.q);
     if (next.category) params.set("category", next.category);
     if (next.priority) params.set("priority", next.priority);
     const qs = params.toString();
-    router.push(`/${qs ? `?${qs}` : ""}`, undefined, { shallow: true });
+    router.replace(`/${qs ? `?${qs}` : ""}`, undefined, { shallow: true });
   }
 
   function clearFilters() {
-    router.push("/", undefined, { shallow: true });
+    setFilters({ q: "", category: "", priority: "" });
+    router.replace("/", undefined, { shallow: true });
   }
 
   async function confirmDelete() {
@@ -103,7 +99,7 @@ export default function Home({ notices: initialNotices }) {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload.error || "Failed to delete notice.");
       }
-      setNotices((prev) => prev.filter((n) => n.id !== target.id));
+      setAllNotices((prev) => prev.filter((n) => n.id !== target.id));
       setTarget(null);
       setToast({ type: "success", message: "Notice deleted." });
     } catch (err) {
@@ -135,11 +131,9 @@ export default function Home({ notices: initialNotices }) {
             </Link>
           </div>
           <p className="mt-3 text-sm text-stone-500">
-            {loading
-              ? "Loading…"
-              : `${notices.length} ${notices.length === 1 ? "notice" : "notices"}${
-                  hasActiveFilter ? " matching your filters" : " · urgent shown first"
-                }`}
+            {`${notices.length} ${notices.length === 1 ? "notice" : "notices"}${
+              hasActiveFilter ? " matching your filters" : " · urgent shown first"
+            }`}
           </p>
         </header>
 
@@ -171,11 +165,7 @@ export default function Home({ notices: initialNotices }) {
             )}
           </div>
         ) : (
-          <div
-            className={`grid grid-cols-1 gap-5 transition-opacity sm:grid-cols-2 lg:grid-cols-3 ${
-              loading ? "pointer-events-none opacity-50" : ""
-            }`}
-          >
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {notices.map((notice) => (
               <NoticeCard key={notice.id} notice={notice} onDelete={setTarget} />
             ))}

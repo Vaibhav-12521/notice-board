@@ -1,34 +1,13 @@
-import { useEffect, useState } from "react";
 import { CATEGORIES, PRIORITIES } from "../lib/validation";
 
 /**
- * Search + category/priority filter bar.
- *
- * Calls `onChange(partialFilters)` so the parent can fetch from the API
- * (which still filters in the database) without a full page reload. The text
- * search is debounced so it filters live as you type.
+ * Search + category/priority filter bar. Fully controlled by `value`; emits
+ * changes immediately via `onChange`. Filtering is applied instantly in the
+ * client (no network), so there's no debounce — every keystroke filters live.
  *
  * @param {{ value: {q:string,category:string,priority:string}, onChange: (p:object)=>void, onClear: ()=>void }} props
  */
 export default function NoticeFilters({ value, onChange, onClear }) {
-  const [q, setQ] = useState(value.q || "");
-
-  // Keep the input in sync when the URL changes externally (e.g. browser
-  // back/forward, the Clear button, or the page reconciling on load).
-  useEffect(() => {
-    setQ(value.q || "");
-  }, [value.q]);
-
-  // Debounce the text search (350ms). Only fire when the input actually differs
-  // from what's already in the URL — this avoids redundant requests AND ensures
-  // clearing the box (including the native × button) resets the list.
-  useEffect(() => {
-    if (q.trim() === (value.q || "")) return;
-    const timer = setTimeout(() => onChange({ q: q.trim() }), 350);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q]);
-
   const hasActiveFilter = Boolean(value.q || value.category || value.priority);
 
   const fieldClass =
@@ -37,10 +16,7 @@ export default function NoticeFilters({ value, onChange, onClear }) {
   return (
     <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onChange({ q: q.trim() });
-        }}
+        onSubmit={(e) => e.preventDefault()}
         className="relative flex-1"
         role="search"
       >
@@ -59,11 +35,11 @@ export default function NoticeFilters({ value, onChange, onClear }) {
         </svg>
         <input
           type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          value={value.q}
+          onChange={(e) => onChange({ q: e.target.value })}
           placeholder="Search notices…"
           aria-label="Search notices"
-          className={`w-full rounded-md border border-stone-300 bg-white py-2 pl-9 pr-3 text-sm text-stone-900 transition focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900`}
+          className="w-full rounded-md border border-stone-300 bg-white py-2 pl-9 pr-3 text-sm text-stone-900 transition focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900"
         />
       </form>
 
@@ -99,10 +75,7 @@ export default function NoticeFilters({ value, onChange, onClear }) {
         {hasActiveFilter && (
           <button
             type="button"
-            onClick={() => {
-              setQ("");
-              onClear();
-            }}
+            onClick={onClear}
             className="rounded-md px-3 py-2 text-sm font-medium text-stone-500 transition hover:text-stone-900"
           >
             Clear

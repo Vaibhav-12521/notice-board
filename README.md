@@ -18,8 +18,10 @@ Reno Platforms Web Development Internship assignment.
 - **Server-side validation** inside the API routes - required fields cannot be
   empty and the date must be valid, even if the browser is bypassed.
 - Optional **image URL** per notice (bonus), with a live preview in the form.
-- **Search and filter** by text, category and priority - all applied in the
-  database query via URL params, not in the browser.
+- **Instant search and filter** by text, category and priority. The
+  server-ordered list (Urgent-first, from the DB) is fetched once and filtered
+  client-side, so it responds with zero network latency. The API also accepts
+  `?q=&category=&priority=` for server-side filtering.
 - UX touches: success toasts on create/update/delete, friendly relative dates,
   consistent card headers for image-less notices, and clear empty states.
 - **Fast loading:** the list page is statically generated and revalidated in
