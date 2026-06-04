@@ -224,14 +224,22 @@ export default function Home({ notices: initialNotices }) {
 // background every 30s (ISR). Ordering is the DB query's job (buildNoticeQuery).
 // The client reconciles to live data + URL filters on mount.
 export async function getStaticProps() {
-  const notices = await prisma.notice.findMany(buildNoticeQuery({}));
+  try {
+    const notices = await prisma.notice.findMany(buildNoticeQuery({}));
 
-  const serialised = notices.map((n) => ({
-    ...n,
-    publishDate: n.publishDate.toISOString(),
-    createdAt: n.createdAt.toISOString(),
-    updatedAt: n.updatedAt.toISOString(),
-  }));
+    const serialised = notices.map((n) => ({
+      ...n,
+      publishDate: n.publishDate.toISOString(),
+      createdAt: n.createdAt.toISOString(),
+      updatedAt: n.updatedAt.toISOString(),
+    }));
 
-  return { props: { notices: serialised }, revalidate: 30 };
+    return { props: { notices: serialised }, revalidate: 30 };
+  } catch (err) {
+    // If the database is briefly unreachable at build/revalidation time, don't
+    // fail the build — render an empty board and let the client fetch live data
+    // on mount. The page will self-correct on the next revalidation.
+    console.error("[getStaticProps] notice fetch failed:", err.message);
+    return { props: { notices: [] }, revalidate: 10 };
+  }
 }
