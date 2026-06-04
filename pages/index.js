@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { prisma } from "../lib/prisma";
@@ -7,10 +7,10 @@ import NoticeCard from "../components/NoticeCard";
 import NoticeFilters from "../components/NoticeFilters";
 import Toast from "../components/Toast";
 
-export default function Home({ notices: initialNotices, filters: initialFilters }) {
+export default function Home({ notices: initialNotices }) {
   const router = useRouter();
   const [notices, setNotices] = useState(initialNotices);
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState({ q: "", category: "", priority: "" });
   const [loading, setLoading] = useState(false);
   const [target, setTarget] = useState(null); // notice pending delete confirmation
   const [deleting, setDeleting] = useState(false);
@@ -18,6 +18,43 @@ export default function Home({ notices: initialNotices, filters: initialFilters 
   const [toast, setToast] = useState(null);
 
   const hasActiveFilter = Boolean(filters.q || filters.category || filters.priority);
+
+  // Fetch the (server-filtered) list from the API without a full page reload.
+  const fetchNotices = useCallback(
+    async (f, { updateUrl = true } = {}) => {
+      const params = new URLSearchParams();
+      if (f.q) params.set("q", f.q);
+      if (f.category) params.set("category", f.category);
+      if (f.priority) params.set("priority", f.priority);
+      const qs = params.toString();
+
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/notices${qs ? `?${qs}` : ""}`);
+        if (!res.ok) throw new Error();
+        setNotices(await res.json());
+        if (updateUrl) {
+          router.push(`/${qs ? `?${qs}` : ""}`, undefined, { shallow: true });
+        }
+      } catch {
+        setToast({ type: "error", message: "Could not load notices." });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [router]
+  );
+
+  // The page is statically generated and served instantly. Once mounted, fetch
+  // live data (so the user always sees the freshest notices, including ones
+  // they just created) and apply any filters present in the URL.
+  useEffect(() => {
+    if (!router.isReady) return;
+    const initial = readFilters(router.query);
+    setFilters(initial);
+    fetchNotices(initial, { updateUrl: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady]);
 
   // Show a toast after a create/update redirect (?flash=created|updated), then
   // strip the param from the URL so it doesn't re-fire on refresh.
@@ -31,28 +68,6 @@ export default function Home({ notices: initialNotices, filters: initialFilters 
     router.replace({ pathname: "/", query: rest }, undefined, { shallow: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query.flash]);
-
-  // Fetch the (server-filtered) list from the API without a full page reload.
-  async function fetchNotices(nextFilters) {
-    const params = new URLSearchParams();
-    if (nextFilters.q) params.set("q", nextFilters.q);
-    if (nextFilters.category) params.set("category", nextFilters.category);
-    if (nextFilters.priority) params.set("priority", nextFilters.priority);
-    const qs = params.toString();
-
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/notices${qs ? `?${qs}` : ""}`);
-      if (!res.ok) throw new Error();
-      setNotices(await res.json());
-      // Keep the URL in sync (shareable / back button) without re-running SSR.
-      router.push(`/${qs ? `?${qs}` : ""}`, undefined, { shallow: true });
-    } catch {
-      setToast({ type: "error", message: "Could not load notices." });
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function handleFilterChange(partial) {
     const next = { ...filters, ...partial };
@@ -198,13 +213,12 @@ export default function Home({ notices: initialNotices, filters: initialFilters 
   );
 }
 
-// Initial load is server-rendered through Prisma (fast first paint + deep-link
-// support). Filtering and Urgent-first ordering are the DB query's job
-// (buildNoticeQuery). Later filter changes fetch the same server-filtered API.
-export async function getServerSideProps({ query }) {
-  const notices = await prisma.notice.findMany(buildNoticeQuery(query));
+// Statically generated (served instantly from the CDN) and rebuilt in the
+// background every 30s (ISR). Ordering is the DB query's job (buildNoticeQuery).
+// The client reconciles to live data + URL filters on mount.
+export async function getStaticProps() {
+  const notices = await prisma.notice.findMany(buildNoticeQuery({}));
 
-  // Dates are not JSON-serialisable, so convert them to ISO strings for props.
   const serialised = notices.map((n) => ({
     ...n,
     publishDate: n.publishDate.toISOString(),
@@ -212,5 +226,5 @@ export async function getServerSideProps({ query }) {
     updatedAt: n.updatedAt.toISOString(),
   }));
 
-  return { props: { notices: serialised, filters: readFilters(query) } };
+  return { props: { notices: serialised }, revalidate: 30 };
 }

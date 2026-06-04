@@ -20,8 +20,11 @@ Reno Platforms Web Development Internship assignment.
 - Optional **image URL** per notice (bonus), with a live preview in the form.
 - **Search and filter** by text, category and priority — all applied in the
   database query via URL params, not in the browser.
-- UX touches: loading skeletons while fetching, success toasts on
-  create/update/delete, friendly relative dates, and clear empty states.
+- UX touches: success toasts on create/update/delete, friendly relative dates,
+  consistent card headers for image-less notices, and clear empty states.
+- **Fast loading:** the list page is statically generated and revalidated in
+  the background (ISR), so it's served instantly from the CDN with no
+  per-request database query; the client then reconciles to live data on load.
 
 ## Tech stack
 
