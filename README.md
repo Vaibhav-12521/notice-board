@@ -15,10 +15,10 @@ Reno Platforms Web Development Internship assignment.
 - **Urgent notices always appear above Normal ones**, ordered in the database
   query (Prisma `orderBy`), with a red **Urgent** badge. Within each priority
   group, newer publish dates come first.
-- **Server-side validation** inside the API routes — required fields cannot be
+- **Server-side validation** inside the API routes - required fields cannot be
   empty and the date must be valid, even if the browser is bypassed.
 - Optional **image URL** per notice (bonus), with a live preview in the form.
-- **Search and filter** by text, category and priority — all applied in the
+- **Search and filter** by text, category and priority - all applied in the
   database query via URL params, not in the browser.
 - UX touches: success toasts on create/update/delete, friendly relative dates,
   consistent card headers for image-less notices, and clear empty states.
@@ -31,7 +31,7 @@ Reno Platforms Web Development Internship assignment.
 | Layer        | Choice                                              |
 | ------------ | --------------------------------------------------- |
 | Framework    | Next.js 14, **Pages Router** (`pages/` directory)   |
-| Database access | **Prisma** — schema + all queries via the client |
+| Database access | **Prisma** - schema + all queries via the client |
 | Database     | **Supabase** (hosted PostgreSQL, free tier)         |
 | Hosting      | **Vercel** (Hobby/free tier)                        |
 | Styling      | **Tailwind CSS**                                    |
@@ -90,8 +90,8 @@ DATABASE_URL="postgresql://...pooler.supabase.com:6543/postgres?pgbouncer=true&c
 DIRECT_URL="postgresql://...pooler.supabase.com:5432/postgres"
 ```
 
-- `DATABASE_URL` — pooled connection (port 6543) used by the app at runtime.
-- `DIRECT_URL` — direct connection (port 5432) used by Prisma for `db push`.
+- `DATABASE_URL` - pooled connection (port 6543) used by the app at runtime.
+- `DIRECT_URL` - direct connection (port 5432) used by Prisma for `db push`.
 
 ### 4. Create the database tables
 
@@ -144,7 +144,7 @@ AI (Claude) was used as a pair-programming assistant to:
 - Write this README.
 
 Every file was reviewed and adjusted by me. I made the architectural decisions
-myself — choosing Supabase Postgres, using Prisma enums so the Urgent-first
+myself - choosing Supabase Postgres, using Prisma enums so the Urgent-first
 ordering is enforceable directly in the database query, and keeping a single
 shared form for create and edit. The AI did not have database credentials and
 did not deploy the app; database setup and the Vercel deployment were done by me.
