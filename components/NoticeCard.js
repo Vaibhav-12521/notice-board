@@ -42,9 +42,7 @@ export default function NoticeCard({ notice, onDelete }) {
 
   return (
     <article
-      className={`flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] ${
-        isUrgent ? "border-l-4 border-l-red-500" : ""
-      }`}
+      className="flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]"
     >
       {notice.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
