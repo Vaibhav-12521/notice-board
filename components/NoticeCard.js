@@ -44,21 +44,23 @@ export default function NoticeCard({ notice, onDelete }) {
     <article
       className="flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]"
     >
-      {notice.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={notice.imageUrl}
-          alt={notice.title}
-          loading="lazy"
-          decoding="async"
-          className="h-40 w-full bg-stone-100 object-cover"
-        />
-      ) : (
-        // Monochrome editorial placeholder for image-less notices.
-        <div className="flex h-40 w-full items-center justify-center border-b border-stone-200 bg-stone-100">
-          <span className="font-serif text-3xl italic text-stone-300">{notice.category}</span>
-        </div>
-      )}
+      <Link href={`/notices/${notice.id}`} className="block" aria-label={`Open ${notice.title}`}>
+        {notice.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={notice.imageUrl}
+            alt={notice.title}
+            loading="lazy"
+            decoding="async"
+            className="h-40 w-full bg-stone-100 object-cover"
+          />
+        ) : (
+          // Monochrome editorial placeholder for image-less notices.
+          <div className="flex h-40 w-full items-center justify-center border-b border-stone-200 bg-stone-100">
+            <span className="font-serif text-3xl italic text-stone-300">{notice.category}</span>
+          </div>
+        )}
+      </Link>
 
       <div className="flex flex-1 flex-col p-5">
         <div className="mb-2 flex items-center gap-2.5">
@@ -79,7 +81,9 @@ export default function NoticeCard({ notice, onDelete }) {
         </div>
 
         <h2 className="mb-1.5 font-serif text-lg font-semibold leading-snug text-stone-900">
-          {notice.title}
+          <Link href={`/notices/${notice.id}`} className="transition hover:text-stone-600">
+            {notice.title}
+          </Link>
         </h2>
         <p className="mb-4 line-clamp-3 flex-1 whitespace-pre-line text-sm leading-relaxed text-stone-600">
           {notice.body}
