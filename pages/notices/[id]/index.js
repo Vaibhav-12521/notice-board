@@ -142,9 +142,11 @@ export default function NoticeDetail({ notice }) {
 }
 
 // Load the notice on the server so a direct link / refresh shows full content.
-// (Rendered fresh per request — a single indexed lookup, so it's fast — which
-// keeps deletes consistent: a removed notice 404s immediately.)
-export async function getServerSideProps({ params }) {
+// Render fresh per request (no caching) so an edited or deleted notice is always
+// reflected immediately — a removed notice 404s right away.
+export async function getServerSideProps({ params, res }) {
+  res.setHeader("Cache-Control", "no-store");
+
   const notice = await prisma.notice.findUnique({ where: { id: params.id } });
 
   if (!notice) {
