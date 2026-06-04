@@ -3,8 +3,8 @@
 A small notice board with full **create, read, update and delete**, built for the
 Reno Platforms Web Development Internship assignment.
 
-**Live demo:** _add your Vercel URL here_
-**Repository:** _add your GitHub URL here_
+**Live demo:** https://notice-board-bice.vercel.app/
+**Repository:** https://github.com/Vaibhav-12521/notice-board
 
 ## Features
 
