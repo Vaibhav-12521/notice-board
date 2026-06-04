@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { CATEGORIES, PRIORITIES } from "../lib/validation";
 
 /**
@@ -12,21 +12,18 @@ import { CATEGORIES, PRIORITIES } from "../lib/validation";
  */
 export default function NoticeFilters({ value, onChange, onClear }) {
   const [q, setQ] = useState(value.q || "");
-  const firstRun = useRef(true);
 
   // Keep the input in sync when the URL changes externally (e.g. browser
-  // back/forward or "Clear"), without firing the debounced search for it.
+  // back/forward, the Clear button, or the page reconciling on load).
   useEffect(() => {
     setQ(value.q || "");
-    firstRun.current = true;
   }, [value.q]);
 
-  // Debounce the text search (350ms) so we don't hit the API on every keypress.
+  // Debounce the text search (350ms). Only fire when the input actually differs
+  // from what's already in the URL — this avoids redundant requests AND ensures
+  // clearing the box (including the native × button) resets the list.
   useEffect(() => {
-    if (firstRun.current) {
-      firstRun.current = false;
-      return;
-    }
+    if (q.trim() === (value.q || "")) return;
     const timer = setTimeout(() => onChange({ q: q.trim() }), 350);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
