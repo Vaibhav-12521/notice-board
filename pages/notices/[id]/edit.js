@@ -9,10 +9,10 @@ export default function EditNotice({ notice }) {
       {/* Masthead */}
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4 sm:px-6">
+          <BackLink />
           <Link href="/" className="font-serif text-xl font-semibold tracking-tight text-stone-900">
             Notice Board
           </Link>
-          <BackLink />
         </div>
       </header>
 
