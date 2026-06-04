@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 
 const STYLES = {
-  success: "bg-green-600",
+  success: "bg-stone-900",
   error: "bg-red-600",
-  info: "bg-gray-800",
+  info: "bg-stone-900",
 };
 
 /**

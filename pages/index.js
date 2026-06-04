@@ -61,7 +61,7 @@ export default function Home({ notices: initialNotices }) {
   useEffect(() => {
     const flash = router.query.flash;
     if (!flash) return;
-    if (flash === "created") setToast({ type: "success", message: "Notice created." });
+    if (flash === "created") setToast({ type: "success", message: "Notice published." });
     else if (flash === "updated") setToast({ type: "success", message: "Notice updated." });
 
     const { flash: _omit, ...rest } = router.query;
@@ -91,7 +91,6 @@ export default function Home({ notices: initialNotices }) {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload.error || "Failed to delete notice.");
       }
-      // Remove from local state immediately — no full reload needed.
       setNotices((prev) => prev.filter((n) => n.id !== target.id));
       setTarget(null);
       setToast({ type: "success", message: "Notice deleted." });
@@ -103,50 +102,58 @@ export default function Home({ notices: initialNotices }) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Notice Board</h1>
-            <p className="text-sm text-gray-500">
-              {loading
-                ? "Loading…"
-                : `${notices.length} ${notices.length === 1 ? "notice" : "notices"}${
-                    hasActiveFilter ? " match your filters" : " · Urgent shown first"
-                  }`}
-            </p>
+    <main className="min-h-screen">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+        {/* Masthead */}
+        <header className="mb-8">
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-stone-900 pb-4">
+            <div>
+              <h1 className="font-serif text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
+                Notice Board
+              </h1>
+              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                Exams &middot; Events &middot; General
+              </p>
+            </div>
+            <Link
+              href="/notices/new"
+              className="rounded-md bg-stone-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-stone-700"
+            >
+              New notice
+            </Link>
           </div>
-          <Link
-            href="/notices/new"
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-          >
-            + Add notice
-          </Link>
+          <p className="mt-3 text-sm text-stone-500">
+            {loading
+              ? "Loading…"
+              : `${notices.length} ${notices.length === 1 ? "notice" : "notices"}${
+                  hasActiveFilter ? " matching your filters" : " · urgent shown first"
+                }`}
+          </p>
         </header>
 
         <NoticeFilters value={filters} onChange={handleFilterChange} onClear={clearFilters} />
 
         {notices.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+          <div className="rounded-lg border border-dashed border-stone-300 bg-white p-16 text-center">
             {hasActiveFilter ? (
               <>
-                <p className="text-gray-600">No notices match your filters.</p>
+                <p className="text-stone-600">No notices match your filters.</p>
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="mt-2 text-sm font-medium text-indigo-600 hover:underline"
+                  className="mt-2 text-sm font-medium text-stone-900 underline underline-offset-4 hover:text-stone-600"
                 >
                   Clear filters
                 </button>
               </>
             ) : (
               <>
-                <p className="text-gray-600">No notices yet.</p>
+                <p className="font-serif text-lg text-stone-700">The board is empty.</p>
                 <Link
                   href="/notices/new"
-                  className="mt-2 inline-block text-sm font-medium text-indigo-600 hover:underline"
+                  className="mt-2 inline-block text-sm font-medium text-stone-900 underline underline-offset-4 hover:text-stone-600"
                 >
-                  Create the first one
+                  Post the first notice
                 </Link>
               </>
             )}
@@ -167,21 +174,21 @@ export default function Home({ notices: initialNotices }) {
       {/* Delete confirmation dialog */}
       {target && (
         <div
-          className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-10 flex items-center justify-center bg-stone-900/50 p-4"
           role="dialog"
           aria-modal="true"
           onClick={() => !deleting && setTarget(null)}
         >
           <div
-            className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+            className="w-full max-w-sm rounded-lg border border-stone-200 bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold text-gray-900">Delete notice?</h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <h2 className="font-serif text-xl font-semibold text-stone-900">Delete this notice?</h2>
+            <p className="mt-1.5 text-sm text-stone-600">
               &ldquo;{target.title}&rdquo; will be permanently removed. This cannot be undone.
             </p>
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -189,7 +196,7 @@ export default function Home({ notices: initialNotices }) {
                   setError("");
                 }}
                 disabled={deleting}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
               >
                 Cancel
               </button>
@@ -197,9 +204,9 @@ export default function Home({ notices: initialNotices }) {
                 type="button"
                 onClick={confirmDelete}
                 disabled={deleting}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
               >
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>

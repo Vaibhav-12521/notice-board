@@ -5,34 +5,28 @@ import NoticeForm from "../../../components/NoticeForm";
 
 export default function EditNotice({ notice }) {
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Top bar */}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 text-base font-semibold text-gray-900">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-xs font-bold text-white">
-              N
-            </span>
+    <main className="min-h-screen">
+      {/* Masthead */}
+      <header className="border-b border-stone-200 bg-white">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link href="/" className="font-serif text-xl font-semibold tracking-tight text-stone-900">
             Notice Board
           </Link>
           <BackLink />
         </div>
       </header>
 
-      <div className="mx-auto max-w-2xl px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Edit notice</h1>
-          <p className="mt-1 text-sm text-gray-500">
+      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+        <div className="mb-7 border-b border-stone-200 pb-5">
+          <h1 className="font-serif text-3xl font-semibold tracking-tight text-stone-900">
+            Edit notice
+          </h1>
+          <p className="mt-1.5 text-sm text-stone-500">
             Update the details below and save your changes.
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500" />
-          <div className="p-6">
-            <NoticeForm mode="edit" initialNotice={notice} />
-          </div>
-        </div>
+        <NoticeForm mode="edit" initialNotice={notice} />
       </div>
     </main>
   );

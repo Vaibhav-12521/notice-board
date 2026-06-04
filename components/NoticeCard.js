@@ -1,20 +1,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const CATEGORY_STYLES = {
-  Exam: "bg-purple-100 text-purple-700",
-  Event: "bg-blue-100 text-blue-700",
-  General: "bg-gray-100 text-gray-700",
-};
-
-// Gradient used as a placeholder banner for notices without an image, so every
-// card has a consistent header.
-const CATEGORY_GRADIENT = {
-  Exam: "from-purple-500 to-indigo-500",
-  Event: "from-blue-500 to-cyan-500",
-  General: "from-slate-500 to-slate-600",
-};
-
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -50,84 +36,70 @@ function relativeLabel(value) {
 export default function NoticeCard({ notice, onDelete }) {
   const isUrgent = notice.priority === "Urgent";
 
-  // Render the absolute date on the server / first paint, then upgrade to the
-  // relative label once mounted on the client. This avoids a hydration mismatch.
+  // Absolute date on the server / first paint, relative label after mount.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   return (
     <article
-      className={`flex flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-md ${
-        isUrgent ? "border-red-300 ring-1 ring-red-200" : "border-gray-200"
+      className={`flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] ${
+        isUrgent ? "border-l-4 border-l-red-500" : ""
       }`}
     >
       {notice.imageUrl ? (
-        // Plain <img> keeps remote, user-supplied URLs simple and avoids
-        // next/image host configuration surprises on the free tier.
-        // Lazy + async decoding keeps the list snappy with many images.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={notice.imageUrl}
           alt={notice.title}
           loading="lazy"
           decoding="async"
-          className="h-40 w-full bg-gray-100 object-cover"
+          className="h-40 w-full bg-stone-100 object-cover"
         />
       ) : (
-        // Consistent header for notices without an image.
-        <div
-          className={`flex h-40 w-full items-center justify-center bg-gradient-to-br ${
-            CATEGORY_GRADIENT[notice.category] || CATEGORY_GRADIENT.General
-          }`}
-        >
-          <span className="text-xl font-bold uppercase tracking-widest text-white/80">
-            {notice.category}
-          </span>
+        // Monochrome editorial placeholder for image-less notices.
+        <div className="flex h-40 w-full items-center justify-center border-b border-stone-200 bg-stone-100">
+          <span className="font-serif text-3xl italic text-stone-300">{notice.category}</span>
         </div>
       )}
 
-      <div className="flex flex-1 flex-col p-4">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              CATEGORY_STYLES[notice.category] || CATEGORY_STYLES.General
-            }`}
-          >
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-2 flex items-center gap-2.5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">
             {notice.category}
           </span>
           {isUrgent && (
-            <span className="rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white">
+            <span className="rounded-sm bg-red-600 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white">
               Urgent
             </span>
           )}
           <span
-            className="ml-auto text-xs text-gray-500"
+            className="ml-auto text-xs text-stone-400"
             title={formatDate(notice.publishDate)}
           >
             {mounted ? relativeLabel(notice.publishDate) : formatDate(notice.publishDate)}
           </span>
         </div>
 
-        <h2 className="mb-1 text-lg font-semibold text-gray-900">
+        <h2 className="mb-1.5 font-serif text-lg font-semibold leading-snug text-stone-900">
           {notice.title}
         </h2>
-        <p className="mb-4 line-clamp-3 flex-1 whitespace-pre-line text-sm text-gray-600">
+        <p className="mb-4 line-clamp-3 flex-1 whitespace-pre-line text-sm leading-relaxed text-stone-600">
           {notice.body}
         </p>
 
-        <div className="mt-auto flex items-center justify-between">
-          <span className="text-xs text-gray-400">{formatDate(notice.publishDate)}</span>
-          <div className="flex gap-2">
+        <div className="mt-auto flex items-center justify-between border-t border-stone-100 pt-3">
+          <span className="text-xs text-stone-400">{formatDate(notice.publishDate)}</span>
+          <div className="flex gap-1">
             <Link
               href={`/notices/${notice.id}/edit`}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-md px-2.5 py-1.5 text-sm font-medium text-stone-600 transition hover:bg-stone-100 hover:text-stone-900"
             >
               Edit
             </Link>
             <button
               type="button"
               onClick={() => onDelete(notice)}
-              className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+              className="rounded-md px-2.5 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
             >
               Delete
             </button>

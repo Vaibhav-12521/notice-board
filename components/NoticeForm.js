@@ -85,7 +85,7 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
   }
 
   const inputClass =
-    "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500";
+    "w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 placeholder-stone-400 transition focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
@@ -96,7 +96,7 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
       )}
 
       <div>
-        <label htmlFor="title" className="mb-1 block text-sm font-medium text-gray-700">
+        <label htmlFor="title" className="mb-1.5 block text-sm font-medium text-stone-700">
           Title <span className="text-red-500">*</span>
         </label>
         <input
@@ -111,7 +111,7 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
       </div>
 
       <div>
-        <label htmlFor="body" className="mb-1 block text-sm font-medium text-gray-700">
+        <label htmlFor="body" className="mb-1.5 block text-sm font-medium text-stone-700">
           Body <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -127,7 +127,7 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="category" className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor="category" className="mb-1.5 block text-sm font-medium text-stone-700">
             Category
           </label>
           <select
@@ -146,7 +146,7 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
         </div>
 
         <div>
-          <label htmlFor="priority" className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor="priority" className="mb-1.5 block text-sm font-medium text-stone-700">
             Priority
           </label>
           <select
@@ -166,7 +166,7 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
       </div>
 
       <div>
-        <label htmlFor="publishDate" className="mb-1 block text-sm font-medium text-gray-700">
+        <label htmlFor="publishDate" className="mb-1.5 block text-sm font-medium text-stone-700">
           Publish date <span className="text-red-500">*</span>
         </label>
         <input
@@ -180,8 +180,8 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
       </div>
 
       <div>
-        <label htmlFor="imageUrl" className="mb-1 block text-sm font-medium text-gray-700">
-          Image URL <span className="text-gray-400">(optional)</span>
+        <label htmlFor="imageUrl" className="mb-1.5 block text-sm font-medium text-stone-700">
+          Image URL <span className="text-stone-400">(optional)</span>
         </label>
         <input
           id="imageUrl"
@@ -203,25 +203,25 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
             src={form.imageUrl}
             alt="Preview"
             onError={() => setImageBroken(true)}
-            className="mt-2 h-36 w-full rounded-md border border-gray-200 object-cover"
+            className="mt-2 h-36 w-full rounded-md border border-stone-200 object-cover"
           />
         )}
         {imageBroken && (
-          <p className="mt-1 text-xs text-gray-400">Could not load a preview for this URL.</p>
+          <p className="mt-1 text-xs text-stone-400">Could not load a preview for this URL.</p>
         )}
       </div>
 
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex items-center gap-3 border-t border-stone-100 pt-5">
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+          className="rounded-md bg-stone-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
         >
-          {submitting ? "Saving..." : mode === "edit" ? "Update notice" : "Create notice"}
+          {submitting ? "Saving…" : mode === "edit" ? "Update notice" : "Publish notice"}
         </button>
         <Link
           href="/"
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-md px-4 py-2.5 text-sm font-medium text-stone-500 transition hover:text-stone-900"
         >
           Cancel
         </Link>

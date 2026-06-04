@@ -1,13 +1,13 @@
 import Link from "next/link";
 
 /**
- * Styled "back" link with an animated arrow. Used on the create/edit pages.
+ * Understated "back" link with an animated arrow. Used on the create/edit pages.
  */
 export default function BackLink({ href = "/", children = "Back to notices" }) {
   return (
     <Link
       href={href}
-      className="group inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm transition hover:border-gray-300 hover:text-indigo-600"
+      className="group inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition hover:text-stone-900"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

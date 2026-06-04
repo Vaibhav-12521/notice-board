@@ -11,3 +11,11 @@ body {
 * {
   box-sizing: border-box;
 }
+
+body {
+  @apply bg-stone-50 text-stone-900 antialiased;
+}
+
+::selection {
+  @apply bg-stone-900 text-stone-50;
+}

@@ -27,26 +27,39 @@ export default function NoticeFilters({ value, onChange, onClear }) {
 
   const hasActiveFilter = Boolean(value.q || value.category || value.priority);
 
-  const selectClass =
-    "rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500";
+  const fieldClass =
+    "rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 transition focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900";
 
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
       <form
         onSubmit={(e) => {
           e.preventDefault();
           onChange({ q: q.trim() });
         }}
-        className="flex-1"
+        className="relative flex-1"
         role="search"
       >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+          aria-hidden="true"
+        >
+          <path
+            fillRule="evenodd"
+            d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
+            clipRule="evenodd"
+          />
+        </svg>
         <input
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search notices..."
+          placeholder="Search notices…"
           aria-label="Search notices"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className={`w-full rounded-md border border-stone-300 bg-white py-2 pl-9 pr-3 text-sm text-stone-900 transition focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900`}
         />
       </form>
 
@@ -55,7 +68,7 @@ export default function NoticeFilters({ value, onChange, onClear }) {
           value={value.category}
           onChange={(e) => onChange({ category: e.target.value })}
           aria-label="Filter by category"
-          className={selectClass}
+          className={fieldClass}
         >
           <option value="">All categories</option>
           {CATEGORIES.map((c) => (
@@ -69,7 +82,7 @@ export default function NoticeFilters({ value, onChange, onClear }) {
           value={value.priority}
           onChange={(e) => onChange({ priority: e.target.value })}
           aria-label="Filter by priority"
-          className={selectClass}
+          className={fieldClass}
         >
           <option value="">All priorities</option>
           {PRIORITIES.map((p) => (
@@ -86,7 +99,7 @@ export default function NoticeFilters({ value, onChange, onClear }) {
               setQ("");
               onClear();
             }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+            className="rounded-md px-3 py-2 text-sm font-medium text-stone-500 transition hover:text-stone-900"
           >
             Clear
           </button>
