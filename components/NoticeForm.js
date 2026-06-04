@@ -73,12 +73,13 @@ export default function NoticeForm({ initialNotice = null, mode = "create" }) {
 
       const payload = await res.json().catch(() => ({}));
       if (payload.errors) {
+        // Field-level validation messages (already written for humans).
         setErrors(payload.errors);
       } else {
-        setFormError(payload.error || "Something went wrong. Please try again.");
+        setFormError("Something went wrong while saving. Please try again.");
       }
     } catch {
-      setFormError("Could not reach the server. Please try again.");
+      setFormError("Couldn't reach the server. Please check your connection and try again.");
     } finally {
       setSubmitting(false);
     }

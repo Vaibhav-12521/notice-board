@@ -95,15 +95,12 @@ export default function Home({ notices: initialNotices }) {
     setError("");
     try {
       const res = await fetch(`/api/notices/${target.id}`, { method: "DELETE" });
-      if (!res.ok && res.status !== 204) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.error || "Failed to delete notice.");
-      }
+      if (!res.ok && res.status !== 204) throw new Error("delete failed");
       setAllNotices((prev) => prev.filter((n) => n.id !== target.id));
       setTarget(null);
       setToast({ type: "success", message: "Notice deleted." });
-    } catch (err) {
-      setError(err.message);
+    } catch {
+      setError("Couldn't delete the notice. Please check your connection and try again.");
     } finally {
       setDeleting(false);
     }
