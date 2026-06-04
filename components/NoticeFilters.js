@@ -14,6 +14,13 @@ export default function NoticeFilters({ value, onChange, onClear }) {
   const [q, setQ] = useState(value.q || "");
   const firstRun = useRef(true);
 
+  // Keep the input in sync when the URL changes externally (e.g. browser
+  // back/forward or "Clear"), without firing the debounced search for it.
+  useEffect(() => {
+    setQ(value.q || "");
+    firstRun.current = true;
+  }, [value.q]);
+
   // Debounce the text search (350ms) so we don't hit the API on every keypress.
   useEffect(() => {
     if (firstRun.current) {

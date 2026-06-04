@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { prisma } from "../lib/prisma";
@@ -19,9 +19,18 @@ export default function Home({ notices: initialNotices }) {
 
   const hasActiveFilter = Boolean(filters.q || filters.category || filters.priority);
 
-  // Fetch the (server-filtered) list from the API without a full page reload.
-  const fetchNotices = useCallback(
-    async (f, { updateUrl = true } = {}) => {
+  // Fetching is driven entirely by the URL query. This single effect runs on
+  // first load, on every filter change, AND on browser back/forward (which all
+  // change router.query) — so the list always matches the URL. The page itself
+  // is statically generated (instant first paint); this reconciles to live,
+  // server-filtered data.
+  useEffect(() => {
+    if (!router.isReady) return;
+    const f = readFilters(router.query);
+    setFilters(f);
+
+    let cancelled = false;
+    (async () => {
       const params = new URLSearchParams();
       if (f.q) params.set("q", f.q);
       if (f.category) params.set("category", f.category);
@@ -32,29 +41,20 @@ export default function Home({ notices: initialNotices }) {
       try {
         const res = await fetch(`/api/notices${qs ? `?${qs}` : ""}`);
         if (!res.ok) throw new Error();
-        setNotices(await res.json());
-        if (updateUrl) {
-          router.push(`/${qs ? `?${qs}` : ""}`, undefined, { shallow: true });
-        }
+        const data = await res.json();
+        if (!cancelled) setNotices(data);
       } catch {
-        setToast({ type: "error", message: "Could not load notices." });
+        if (!cancelled) setToast({ type: "error", message: "Could not load notices." });
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    },
-    [router]
-  );
+    })();
 
-  // The page is statically generated and served instantly. Once mounted, fetch
-  // live data (so the user always sees the freshest notices, including ones
-  // they just created) and apply any filters present in the URL.
-  useEffect(() => {
-    if (!router.isReady) return;
-    const initial = readFilters(router.query);
-    setFilters(initial);
-    fetchNotices(initial, { updateUrl: false });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.isReady]);
+  }, [router.isReady, router.query.q, router.query.category, router.query.priority]);
 
   // Show a toast after a create/update redirect (?flash=created|updated), then
   // strip the param from the URL so it doesn't re-fire on refresh.
@@ -69,16 +69,20 @@ export default function Home({ notices: initialNotices }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query.flash]);
 
+  // Filter changes just update the URL (shallow). The effect above reacts to
+  // the URL change and fetches — which also makes back/forward consistent.
   function handleFilterChange(partial) {
     const next = { ...filters, ...partial };
-    setFilters(next);
-    fetchNotices(next);
+    const params = new URLSearchParams();
+    if (next.q) params.set("q", next.q);
+    if (next.category) params.set("category", next.category);
+    if (next.priority) params.set("priority", next.priority);
+    const qs = params.toString();
+    router.push(`/${qs ? `?${qs}` : ""}`, undefined, { shallow: true });
   }
 
   function clearFilters() {
-    const next = { q: "", category: "", priority: "" };
-    setFilters(next);
-    fetchNotices(next);
+    router.push("/", undefined, { shallow: true });
   }
 
   async function confirmDelete() {
