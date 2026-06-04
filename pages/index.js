@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { prisma } from "../lib/prisma";
@@ -16,6 +16,7 @@ export default function Home({ notices: initialNotices }) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
+  const didInit = useRef(false);
 
   const hasActiveFilter = Boolean(filters.q || filters.category || filters.priority);
 
@@ -29,6 +30,13 @@ export default function Home({ notices: initialNotices }) {
     const f = readFilters(router.query);
     setFilters(f);
 
+    // First load with no filters: the page already shows the statically
+    // generated snapshot, so reconcile silently (no loading dim) to avoid a
+    // flicker. Filter changes and later loads show the dim normally.
+    const hasFilter = f.q || f.category || f.priority;
+    const silent = !didInit.current && !hasFilter;
+    didInit.current = true;
+
     let cancelled = false;
     (async () => {
       const params = new URLSearchParams();
@@ -37,7 +45,7 @@ export default function Home({ notices: initialNotices }) {
       if (f.priority) params.set("priority", f.priority);
       const qs = params.toString();
 
-      setLoading(true);
+      if (!silent) setLoading(true);
       try {
         const res = await fetch(`/api/notices${qs ? `?${qs}` : ""}`);
         if (!res.ok) throw new Error();
@@ -46,7 +54,7 @@ export default function Home({ notices: initialNotices }) {
       } catch {
         if (!cancelled) setToast({ type: "error", message: "Could not load notices." });
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && !silent) setLoading(false);
       }
     })();
 

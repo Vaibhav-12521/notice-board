@@ -142,7 +142,12 @@ export default function NoticeDetail({ notice }) {
 }
 
 // Load the notice on the server so a direct link / refresh shows full content.
-export async function getServerSideProps({ params }) {
+export async function getServerSideProps({ params, res }) {
+  // Let Vercel's CDN cache the rendered page for a short window so repeat views
+  // are served from the edge instead of re-querying the DB. stale-while-
+  // revalidate keeps it fast while it refreshes in the background.
+  res.setHeader("Cache-Control", "public, s-maxage=10, stale-while-revalidate=59");
+
   const notice = await prisma.notice.findUnique({ where: { id: params.id } });
 
   if (!notice) {
